@@ -52,7 +52,7 @@ Verify checksum before booting (optional):
 | File | Size | Purpose | SHA256 |
 |---|---:|---|---|
 | `garnet-boot.img` | `1.65 MB` | RAM-bootable `xnuloader` + UEFI image (`fastboot boot`) | `ab903163d7c2e65dd3a59ee059350d2c2521368717945e481322499003a83489` |
-| `payloads/run-metal-fixed-payload.bin` | `41.11 MB` | Prebuilt XNU kernel + `root_metal_fixed.apfs` + Metal cmdline | `6b7409790241e30b617fa6eff6fe443a8064fe0296fd3c0da238d96a9fa15968` |
+| `payloads/run-metal-fixed-payload.bin` | `41.12 MB` | Prebuilt XNU kernel + `root_metal_fixed.apfs` + Metal cmdline | `494636ba50611e58881294d6f0cf4f34b7b5a494d667636bbdbb3923cae7ea4c` |
 | `payloads/opengles_payload.bin` | `40.99 MB` | Prebuilt XNU kernel + `root.apfs` + OpenGL ES cmdline | `927bcda239df9c6c587d933c9e7aedefd11add071310b9a80b8f4c900487e66e` |
 | `boot.bat` / `boot.sh` | — | Interactive Windows & Linux/macOS RAM boot managers | — |
 | `tools/platform-tools/` | `11.7 MB` | Bundled Windows `adb.exe` & `fastboot.exe` (Apache-2.0) | — |
