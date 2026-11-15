@@ -29,6 +29,66 @@ device_state() {
     fi
 }
 
+# Honest USB transfer activity bar + elapsed timer + real MB/s on finish.
+# (fastboot stage does not report mid-transfer byte offsets, so percentages are never faked.)
+stage_with_progress() {
+    local file="$1"
+    local label="$2"
+    local bytes mb tmp_out tmp_err t0 pid rc dt rate
+    local pos=0 dir=1 w=16 bar_w=4
+
+    bytes=$(wc -c < "$file" | tr -d '[:space:]')
+    mb=$(awk "BEGIN { printf \"%.1f\", $bytes / 1048576 }")
+    tmp_out=$(mktemp)
+    tmp_err=$(mktemp)
+
+    t0=$(date +%s%N 2>/dev/null || date +%s)
+    fastboot stage "$file" >"$tmp_out" 2>"$tmp_err" &
+    pid=$!
+
+    while kill -0 "$pid" 2>/dev/null; do
+        local left right now sec mm ss
+        left=$(printf '%*s' "$pos" '')
+        right=$(printf '%*s' $((w - bar_w - pos)) '')
+        now=$(date +%s%N 2>/dev/null || date +%s)
+        if [ ${#t0} -gt 12 ]; then
+            sec=$(( (now - t0) / 1000000000 ))
+        else
+            sec=$(( now - t0 ))
+        fi
+        mm=$(( sec / 60 ))
+        ss=$(( sec % 60 ))
+        printf '\r    %s (%s MB)  [%s<==>%s]  %02d:%02d elapsed   ' "$label" "$mb" "$left" "$right" "$mm" "$ss"
+        pos=$((pos + dir))
+        if [ "$pos" -ge $((w - bar_w)) ] || [ "$pos" -le 0 ]; then
+            dir=$((-dir))
+        fi
+        sleep 0.15
+    done
+
+    wait "$pid"
+    rc=$?
+    local t1
+    t1=$(date +%s%N 2>/dev/null || date +%s)
+    if [ ${#t0} -gt 12 ]; then
+        dt=$(awk "BEGIN { d = ($t1 - $t0) / 1000000000; if (d < 0.1) d = 0.1; printf \"%.1f\", d }")
+    else
+        dt=$(awk "BEGIN { d = ($t1 - $t0); if (d < 0.1) d = 0.1; printf \"%.1f\", d }")
+    fi
+    rate=$(awk "BEGIN { printf \"%.1f\", $mb / $dt }")
+
+    printf '\r%*s\r' 80 ''
+    if [ "$rc" -eq 0 ]; then
+        echo "[OK] $label staged ($mb MB in ${dt}s @ ${rate} MB/s)"
+    else
+        echo "[ERR] Failed to stage $label after ${dt}s (exit code $rc)"
+        [ -s "$tmp_out" ] && cat "$tmp_out"
+        [ -s "$tmp_err" ] && cat "$tmp_err"
+    fi
+    rm -f "$tmp_out" "$tmp_err"
+    return "$rc"
+}
+
 boot_loader_stage() {
     echo "[*] Booting $BOOTIMG into RAM via fastboot boot..."
     fastboot boot "$BOOTIMG" || { echo "[ERR] fastboot boot failed."; return 1; }
@@ -87,7 +147,7 @@ run_boot() {
         sleep 3
         local ok=0
         for attempt in 1 2 3 4 5; do
-            echo "[*] Preparing resident ramdisk allocation ($attempt/5)..."
+            echo "[*] [1/2] Preparing resident ramdisk allocation ($attempt/5)..."
             if fastboot oem ramdisk >/dev/null 2>&1; then
                 ok=1
                 break
@@ -97,9 +157,8 @@ run_boot() {
         done
         [ "$ok" = "1" ] || { echo "[ERR] fastboot oem ramdisk failed."; return 1; }
 
-        echo "[*] Staging $SYSTEM (2.32 GB) to RAM..."
-        fastboot stage "$SYSTEM" || { echo "[ERR] Failed to stage $SYSTEM."; return 1; }
-        echo "[OK] system.apfs loaded!"
+        echo "[*] Uploading iOS rootfs to RAM (transfer speed depends on USB 2.0/3.0 link)..."
+        stage_with_progress "$SYSTEM" "system.apfs" || return 1
     else
         echo "[*] Fast Swap mode: skipping system.apfs upload."
     fi
@@ -108,8 +167,8 @@ run_boot() {
     sleep 4
     local staged=0
     for attempt in 1 2 3 4 5; do
-        echo "[*] Staging kernel payload $label ($attempt/5)..."
-        if fastboot stage "$payload"; then
+        echo "[*] [2/2] Uploading kernel payload $label ($attempt/5)..."
+        if stage_with_progress "$payload" "payload"; then
             staged=1
             break
         fi

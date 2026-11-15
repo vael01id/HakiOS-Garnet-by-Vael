@@ -109,23 +109,23 @@ echo.
 echo [2/4] Detecting POCO X6 5G connection...
 
 :detect_loop
-%FB% devices 2>nul | findstr /i "xnuloader" >nul 2>&1
+"%FB%" devices 2>nul | findstr /i "xnuloader" >nul 2>&1
 if %errorlevel% equ 0 (
     echo [OK] Device detected already in xnuloader mode.
     goto :stage_process
 )
 
-%FB% devices 2>nul | findstr /v /i "devices" | findstr /i "fastboot" >nul 2>&1
+"%FB%" devices 2>nul | findstr /v /i "devices" | findstr /i "fastboot" >nul 2>&1
 if %errorlevel% equ 0 (
     echo [OK] Device detected in standard Fastboot mode.
     goto :boot_loader
 )
 
-%ADB% devices 2>nul | findstr /v /i "attached" | findstr /i "device" >nul 2>&1
+"%ADB%" devices 2>nul | findstr /v /i "attached" | findstr /i "device" >nul 2>&1
 if %errorlevel% equ 0 (
     echo [OK] Device detected in Android / HyperOS.
     echo [*] Rebooting device to Fastboot mode...
-    %ADB% reboot bootloader
+    "%ADB%" reboot bootloader
     goto :wait_fastboot
 )
 
@@ -140,7 +140,7 @@ echo [*] Waiting for device to enter Fastboot mode...
 set /a attempts=0
 :loop_wfb
 ping -n 2 127.0.0.1 >nul
-%FB% devices 2>nul | findstr /v /i "devices" | findstr /i "fastboot" >nul 2>&1
+"%FB%" devices 2>nul | findstr /v /i "devices" | findstr /i "fastboot" >nul 2>&1
 if %errorlevel% equ 0 (
     echo [OK] Fastboot connected!
     goto :boot_loader
@@ -159,7 +159,7 @@ REM ================================================================
 :boot_loader
 echo.
 echo [3/4] Booting xnuloader into RAM via fastboot boot...
-%FB% boot "%BOOTIMG%"
+"%FB%" boot "%BOOTIMG%"
 if %errorlevel% neq 0 (
     echo [ERR] Failed to boot xnuloader image into RAM!
     pause
@@ -170,7 +170,7 @@ echo [*] Waiting for xnuloader initialization in RAM...
 set /a attempts=0
 :loop_wxnu
 ping -n 2 127.0.0.1 >nul
-%FB% devices 2>nul | findstr /i "xnuloader" >nul 2>&1
+"%FB%" devices 2>nul | findstr /i "xnuloader" >nul 2>&1
 if %errorlevel% equ 0 (
     echo [OK] xnuloader active and ready to receive data!
     goto :stage_process
@@ -195,13 +195,13 @@ if "!SKIP_APFS!"=="1" (
     goto :stage_kernel_prep
 )
 
-%FB% oem stop >nul 2>&1
+"%FB%" oem stop >nul 2>&1
 ping -n 4 127.0.0.1 >nul
 
 set /a rd_attempts=0
 :try_ramdisk
 echo [*] [1/2] Preparing resident RAM allocation ^(fastboot oem ramdisk^)...
-%FB% oem ramdisk >nul 2>&1
+"%FB%" oem ramdisk >nul 2>&1
 if %errorlevel% equ 0 (
     echo [OK] Resident ramdisk allocation ready.
     goto :do_push_system
@@ -210,7 +210,7 @@ if %errorlevel% equ 0 (
 set /a rd_attempts+=1
 if !rd_attempts! leq 5 (
     echo [*] Previous kernel still stopping, waiting 3s... ^(!rd_attempts!/5^)
-    %FB% oem stop >nul 2>&1
+    "%FB%" oem stop >nul 2>&1
     ping -n 4 127.0.0.1 >nul
     goto :try_ramdisk
 )
@@ -222,33 +222,31 @@ pause
 goto :menu
 
 :do_push_system
-echo [*] Uploading iOS rootfs system.apfs ^(2.32 GB^) to RAM...
-echo     Transferring over USB, please wait ~15-25 seconds...
-%FB% stage "%SYSTEM%"
+echo [*] Uploading iOS rootfs to RAM ^(transfer speed depends on USB 2.0/3.0 link^)...
+call :stage_with_progress "%SYSTEM%" "system.apfs"
 if %errorlevel% neq 0 (
     echo [ERR] Failed to stage system.apfs to RAM!
     pause
     goto :menu
 )
-echo [OK] system.apfs loaded into RAM!
 
 :stage_kernel_prep
 echo [*] Stopping previous kernel session if running ^(fastboot oem stop^)...
-%FB% oem stop >nul 2>&1
+"%FB%" oem stop >nul 2>&1
 echo [*] Waiting for kernel to return control to loader ^(3-4s^)...
 ping -n 5 127.0.0.1 >nul
 
 set /a kp_attempts=0
 :loop_stage_payload
 echo.
-echo [*] [2/2] Staging kernel payload: %LABEL%...
-%FB% stage "%PAYLOAD%"
+echo [*] [2/2] Uploading kernel payload: %LABEL%...
+call :stage_with_progress "%PAYLOAD%" "payload"
 if %errorlevel% equ 0 goto :stage_payload_ok
 
 set /a kp_attempts+=1
 if !kp_attempts! leq 5 (
     echo [*] Waiting for previous kernel release... ^(!kp_attempts!/5^)
-    %FB% oem stop >nul 2>&1
+    "%FB%" oem stop >nul 2>&1
     ping -n 4 127.0.0.1 >nul
     goto :loop_stage_payload
 )
@@ -259,11 +257,9 @@ pause
 goto :menu
 
 :stage_payload_ok
-echo [OK] Kernel payload loaded into RAM!
-
 echo.
 echo [*] Launching Darwin XNU kernel ^(fastboot oem run^)...
-%FB% oem run
+"%FB%" oem run
 if %errorlevel% neq 0 (
     echo [ERR] fastboot oem run failed!
     pause
@@ -283,3 +279,20 @@ echo   4. To return to Android: hold physical POWER button for 10-15 seconds.
 echo.
 pause
 goto :menu
+
+REM ================================================================
+REM HELPER - Honest USB Transfer Activity Bar + Real Speed Summary
+REM (Note: fastboot stage does not report mid-transfer USB byte
+REM  counts, so this shows live elapsed time and real MB/s on finish
+REM  without faking percentages.)
+REM ================================================================
+:stage_with_progress
+if not exist "tools\stage.ps1" goto :stage_raw
+where powershell >nul 2>&1
+if %errorlevel% neq 0 goto :stage_raw
+powershell -NoProfile -InputFormat None -ExecutionPolicy Bypass -File "tools\stage.ps1" "%FB%" "%~1" "%~2"
+exit /b %errorlevel%
+
+:stage_raw
+"%FB%" stage "%~1"
+exit /b %errorlevel%
