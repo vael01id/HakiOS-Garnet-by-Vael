@@ -1,0 +1,13 @@
+# External 2.32 GB system ramdisk (provided separately via Drive link in README.md)
+userland/*.apfs
+*.apfs
+
+# Runtime logs and screenshots
+logs/
+out/
+*.log
+*.raw
+*.png
+*.bmp
+*.tmp
+*~

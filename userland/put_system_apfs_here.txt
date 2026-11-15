@@ -1,0 +1,7 @@
+Download system.apfs (2.32 GB) from the Google Drive link in README.md and place it inside this userland/ directory as:
+
+  userland/system.apfs
+
+Expected file verification:
+  Size   : 2492203008 bytes (2.32 GB)
+  SHA256 : ccfdbc0a8c7f3166eed76ca6e14fe9a1060d58884cda408aca2354447d7c55e7
