@@ -57,3 +57,4 @@ For reliable Adreno 710 GMU init, boot from Android (`adb reboot bootloader`) or
 - [`oosexgang/hakios-xnu-kernel`](https://github.com/oosexgang/hakios-xnu-kernel), `hakios-xnu-userland`, `hakios-metal` — XNU port, `xnuloader`, Mesa/Metal stack
 - [`Project-Silicium/Mu-Silicium`](https://github.com/Project-Silicium/Mu-Silicium) — Qualcomm UEFI base
 - Licenses: [`LICENSE.APSL`](LICENSE.APSL) (`APSL-2.0`), [`LICENSE`](LICENSE) (`MIT`), [`LEGAL.md`](LEGAL.md)
+"# HakiOS-Garnet-by-Vael" 
