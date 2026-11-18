@@ -25,7 +25,7 @@ echo     HACKIOS GARNET BOOT MANAGER - POCO X6 5G ^| iOS 16.5
 echo ================================================================
 echo.
 echo   Full Boot (stage system.apfs + payload + oem run):
-echo   [1] Apple Metal Native   (Adreno 710 + FT3683G Touch)
+echo   [1] Apple Metal Native   (Adreno 710 + FT3683G + ADSP Audio/Battery)
 echo   [2] OpenGL ES            (Mesa Freedreno / EAGL Fallback)
 echo.
 echo   Fast Swap (skip system.apfs, swap payload + oem run only):

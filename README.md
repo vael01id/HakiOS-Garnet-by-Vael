@@ -1,66 +1,59 @@
-# HackiOS — POCO X6 5G (`garnet`) iOS 16.5 Ready-to-Boot
+# HakiOS — POCO X6 5G (`garnet`) iOS 16.5
 
-Ready-to-boot **100% RAM-only** HakiOS (Darwin / XNU, iOS 16.5 `arm64`) release package for **Xiaomi POCO X6 5G (`garnet`, Qualcomm Snapdragon 7s Gen 2 / `SM7435-AB`)** with Adreno 710 GPU acceleration (Metal & OpenGL ES) and native FocalTech `FT3683G` touch support.
+RAM-only Darwin / XNU (iOS 16.5 `arm64`) boot package for **Xiaomi POCO X6 5G (`garnet`, Snapdragon 7s Gen 2 / `SM7435-AB`)** via `xnuloader`. Nothing is flashed to UFS; hold the Power button for 10–15 seconds to reboot back into Android / HyperOS.
 
----
+## 1. Download `system.apfs` (2.32 GiB)
 
-## Step 1: Download `system.apfs` (Required, 2.32 GB)
+`userland/system.apfs` is too large for Git and must be downloaded separately:
 
-Because `system.apfs` is **2.32 GB**, it cannot be stored directly in Git. Download it separately and place it inside the [`userland/`](userland/put_system_apfs_here.txt) folder:
-
-> **[Download `system.apfs` (2.32 GB) via Google Drive](<PASTE_GOOGLE_DRIVE_SYSTEM_APFS_LINK_HERE>)**
-
-Put the downloaded file here:
-
-```text
-userland/system.apfs
-```
-
-Verify checksum before booting (optional):
-
+- **Download:** [`system.apfs` (Google Drive)](https://drive.google.com/drive/folders/1Y-K-KpTB9W_ciMqKAiWjXcV79APk6QmJ?usp=sharing)
+- **Place at:** `userland/system.apfs`
 - **Size:** `2,492,203,008` bytes
 - **SHA256:** `ccfdbc0a8c7f3166eed76ca6e14fe9a1060d58884cda408aca2354447d7c55e7`
 
----
+## 2. Boot
 
-## Step 2: Quick Boot
+Requires an unlocked bootloader, USB data cable, and Android USB Debugging enabled (or the phone already in Fastboot via `Volume Down + Power`).
 
-> **100% RAM-Only Safety Guarantee:** Nothing is ever flashed to NAND/UFS partitions. Holding the physical **Power button for 10–15 seconds** cleanly reboots your phone back into stock Android / HyperOS.
+**Windows:** run `boot.bat` (`adb.exe` and `fastboot.exe` are bundled in `tools/platform-tools/`).
 
-### Windows
-1. Enable **USB Debugging** on Android (or hold **Volume Down + Power** to enter Fastboot mode).
-2. Double-click **`boot.bat`** (`adb.exe` & `fastboot.exe` are bundled in `tools/platform-tools/`).
-3. Choose:
-   - **`[1]` Apple Metal Native** — Recommended (Adreno 710 hardware acceleration + `FT3683G` touch + updated `QuartzCore-default.metallib`).
-   - **`[2]` OpenGL ES** — Mesa Freedreno / EAGL fallback.
-   - **`[3]` / `[4]` Fast Swap** — Skips re-uploading the 2.32 GB `system.apfs` when switching payloads from resident `xnuloader`.
+**Linux / macOS:** install `android-tools`, then run:
 
-### Linux / macOS
-1. Install `android-tools` (`adb` and `fastboot`).
-2. Run:
-   ```bash
-   chmod +x boot.sh
-   ./boot.sh
-   ```
+```bash
+chmod +x boot.sh
+./boot.sh
+```
 
-> **Tip (GMU Cold Reset):** For reliable Adreno 710 GMU initialization, start a fresh session from Android (`adb reboot bootloader`) or Xiaomi Fastboot rather than repeating indefinitely from inside a stale `xnuloader` session.
+Menu options:
+- `[1] Apple Metal Native` — Full boot (`system.apfs` + Metal/ADSP payload: Adreno 710 Metal, touch, speaker audio, battery reading).
+- `[2] OpenGL ES` — Full boot with Mesa Freedreno fallback payload (older kernel without ADSP audio/battery).
+- `[3]` / `[4]` **Fast Swap** — Uploads only the kernel payload when switching modes while `xnuloader` already has `system.apfs` in RAM.
 
----
+For reliable Adreno 710 GMU init, boot from Android (`adb reboot bootloader`) or a fresh Fastboot session instead of looping soft resets in `xnuloader`.
+
+## Status
+
+| Feature | State | Notes |
+|---|---|---|
+| Display & GPU | Works | Adreno 710 (Metal & OpenGL ES); panel refresh is 60 Hz, UI currently ~26–46 fps |
+| Touch & Power key | Works | FocalTech `FT3683G` touchscreen; Power button sleep/wake |
+| Audio & ADSP | Works | Speaker output, Control Center volume slider, and `Vol+`/`Vol-` buttons |
+| Battery & Clock | Partial | Battery % and USB status via ADSP (no fast charging); PMIC RTC ticks from boot `epoch` |
+| Brightness & Vol keys | Works | Control Center brightness slider (`kern.hakios.brightness`); `Vol+`/`Vol-` HUD events |
+| Connectivity & Peripherals | Missing | Wi-Fi, Bluetooth, Cellular, Camera, GPS, Microphone |
 
 ## Included Files
 
-| File | Size | Purpose | SHA256 |
+| File | Size | Notes | SHA256 |
 |---|---:|---|---|
-| `garnet-boot.img` | `1.65 MB` | RAM-bootable `xnuloader` + UEFI image (`fastboot boot`) | `ab903163d7c2e65dd3a59ee059350d2c2521368717945e481322499003a83489` |
-| `payloads/run-metal-fixed-payload.bin` | `41.11 MB` | Prebuilt XNU kernel + `root_metal_fixed.apfs` + Metal cmdline | `6b7409790241e30b617fa6eff6fe443a8064fe0296fd3c0da238d96a9fa15968` |
-| `payloads/opengles_payload.bin` | `40.99 MB` | Prebuilt XNU kernel + `root.apfs` + OpenGL ES cmdline | `927bcda239df9c6c587d933c9e7aedefd11add071310b9a80b8f4c900487e66e` |
-| `boot.bat` / `boot.sh` | — | Interactive Windows & Linux/macOS RAM boot managers | — |
-| `tools/platform-tools/` | `11.7 MB` | Bundled Windows `adb.exe` & `fastboot.exe` (Apache-2.0) | — |
+| `garnet-boot.img` | `2.51 MiB` (`2,627,584` B) | `xnuloader` + UEFI (`fastboot boot`, auto-detects 8/12 GB RAM) | `b6628f7eaabe2dcd7c71fb0e8af939d290142697628b41d32d55aad740e9d778` |
+| `payloads/run-metal-fixed-payload.bin` | `50.53 MiB` (`52,979,496` B) | XNU kernel + APFS ramdisk + Metal/ADSP cmdline | `4df68e08790ae762b232f627952fb3871c66ddcc4c53f582190b83d15d32d88c` |
+| `payloads/opengles_payload.bin` | `40.99 MiB` (`42,983,128` B) | XNU kernel + OpenGL ES fallback ramdisk | `927bcda239df9c6c587d933c9e7aedefd11add071310b9a80b8f4c900487e66e` |
+| `boot.bat` / `boot.sh` | — | Windows & Unix RAM boot scripts (`tools/stage.ps1` transfer monitor) | — |
+| `tools/platform-tools/` | — | Bundled Windows `adb` & `fastboot` (`Apache-2.0`, `NOTICE.txt`) | — |
 
----
+## Credits & Licenses
 
-## Credits & Upstream Lineage
-
-- **[oosexgang/hakios-xnu-kernel](https://github.com/oosexgang/hakios-xnu-kernel)**, **hakios-xnu-userland**, & **hakios-metal** — Core HakiOS XNU port, `xnuloader`, and Mesa/Metal graphics stack
-- **[Project-Silicium/Mu-Silicium](https://github.com/Project-Silicium/Mu-Silicium)** — Qualcomm UEFI EDK2 foundation
-- **Apple OSS Distributions (`xnu`)** — XNU kernel under `APSL-2.0` (see [`LICENSE.APSL`](LICENSE.APSL) and [`LEGAL.md`](LEGAL.md))
+- [`oosexgang/hakios-xnu-kernel`](https://github.com/oosexgang/hakios-xnu-kernel), `hakios-xnu-userland`, `hakios-metal` — XNU port, `xnuloader`, Mesa/Metal stack
+- [`Project-Silicium/Mu-Silicium`](https://github.com/Project-Silicium/Mu-Silicium) — Qualcomm UEFI base
+- Licenses: [`LICENSE.APSL`](LICENSE.APSL) (`APSL-2.0`), [`LICENSE`](LICENSE) (`MIT`), [`LEGAL.md`](LEGAL.md)
