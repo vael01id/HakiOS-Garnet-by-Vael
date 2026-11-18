@@ -1,6 +1,6 @@
 # HakiOS — POCO X6 5G (`garnet`) iOS 16.5
 
-RAM-only Darwin / XNU (iOS 16.5 `arm64`) boot package for **Xiaomi POCO X6 5G (`garnet`, Snapdragon 7s Gen 2 / `SM7435-AB`)** via `xnuloader`. Nothing is flashed to UFS; hold the Power button for 10–15 seconds to reboot back into Android / HyperOS.
+RAM-only Darwin / XNU (iOS 16.5 `arm64`) boot package for **Xiaomi POCO X6 5G (`garnet`, Snapdragon 7s Gen 2 / `SM7435-AB`)** via `xnuloader`. Nothing is flashed to UFS; hold the Power button for 10–15 seconds to reboot back into Android.
 
 ## 1. Download `system.apfs` (2.32 GiB)
 
