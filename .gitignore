@@ -3,8 +3,8 @@ userland/system.apfs
 *.bin
 !payloads/*.bin
 tools/platform-tools/
-garnet-boot.img
 *.img
+!garnet-boot.img
 out/
 *.raw
 *.png
