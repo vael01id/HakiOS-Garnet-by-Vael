@@ -49,13 +49,13 @@ Debug / rollback boot-args if needed: `wifi=0` (disable Wi-Fi), `haptic=0` (disa
 
 ## Included Files
 
-| File | Size | Notes | SHA256 |
-|---|---:|---|---|
-| `garnet-boot.img` | `2.51 MiB` (`2,627,584` B) | `xnuloader` + UEFI (`fastboot boot`, auto-detects 8/12 GB RAM) | `b6628f7eaabe2dcd7c71fb0e8af939d290142697628b41d32d55aad740e9d778` |
-| `payloads/run-metal-fixed-payload.bin` | `53.93 MiB` (`56,549,608` B) | XNU kernel + APFS ramdisk + **Real 120 Hz Beam-Locked VSync** (major upgrade over previous release, ultra-smooth 120 FPS UI) + **Native Metal (`metal=1`)** with Spotlight Search top black bar & blur backdrop fixes + PM8350B HV-Haptics (`haptic=5`) + 2000 Hz / 2.4 MHz SPI Touch + ADSP `battmgr` + PM6150L Torch (`torch=3`) | `29d84078099d7afb6750b0e8ae4f8a6951affa6680c1a1f3765e33e2cd7c9bf0` |
-| `payloads/opengles_payload.bin` | `53.93 MiB` (`56,549,528` B) | XNU kernel + APFS ramdisk + OpenGL ES (`gl=1`) + Real 120 Hz + Haptics + Touch + ADSP + Torch (100% Fast Swap compatible) | `f355c98966b3071a3b2aa72f787fd118380e73a00130478d21a9d47b4ab9920d` |
-| `boot.bat` / `boot.sh` | — | Windows & Unix RAM boot scripts (`tools/stage.ps1` transfer monitor) | — |
-| `tools/platform-tools/` | — | Bundled Windows `adb` & `fastboot` (`Apache-2.0`, `NOTICE.txt`) | — |
+| File | Size | Notes |
+|---|---:|---|
+| `garnet-boot.img` | `2.51 MiB` (`2,627,584` B) | `xnuloader` + UEFI (`fastboot boot`, auto-detects 8/12 GB RAM) |
+| `payloads/run-metal-fixed-payload.bin` | `53.93 MiB` (`56,549,608` B) | XNU kernel + APFS ramdisk + **Real 120 Hz Beam-Locked VSync** (major upgrade over previous release, ultra-smooth 120 FPS UI) + **Native Metal (`metal=1`)** with Spotlight Search top black bar & blur backdrop fixes + PM8350B HV-Haptics (`haptic=5`) + 2000 Hz / 2.4 MHz SPI Touch + ADSP `battmgr` + PM6150L Torch (`torch=3`) |
+| `payloads/opengles_payload.bin` | `53.93 MiB` (`56,549,528` B) | XNU kernel + APFS ramdisk + OpenGL ES (`gl=1`) + Real 120 Hz + Haptics + Touch + ADSP + Torch (100% Fast Swap compatible) |
+| `boot.bat` / `boot.sh` | — | Windows & Unix RAM boot scripts (`tools/stage.ps1` transfer monitor) |
+| `tools/platform-tools/` | — | Bundled Windows `adb` & `fastboot` (`Apache-2.0`, `NOTICE.txt`) |
 
 ## Credits & Licenses
 
