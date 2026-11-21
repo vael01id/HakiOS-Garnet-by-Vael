@@ -187,7 +187,7 @@ while true; do
     echo "================================================================"
     echo "    HACKIOS GARNET BOOT MANAGER - POCO X6 5G | iOS 16.5"
     echo "================================================================"
-    echo "  [1] Apple Metal Native   (Adreno 710 + FT3683G + ADSP Audio/Battery)"
+    echo "  [1] Apple Metal Native   (Adreno 710 120Hz + Haptics + Touch + ADSP)"
     echo "  [2] OpenGL ES            (Mesa Freedreno / EAGL Fallback)"
     echo "  [3] Fast Swap to Metal   (skip system.apfs)"
     echo "  [4] Fast Swap to OpenGL ES (skip system.apfs)"

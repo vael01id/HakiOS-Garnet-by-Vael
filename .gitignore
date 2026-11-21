@@ -1,11 +1,11 @@
-# External 2.32 GB system ramdisk (provided separately via Drive link in README.md)
-userland/*.apfs
-*.apfs
-
-# Runtime logs and screenshots
-logs/
+# Binaries and local downloads
+userland/system.apfs
+*.bin
+!payloads/*.bin
+tools/platform-tools/
+garnet-boot.img
+*.img
 out/
-*.log
 *.raw
 *.png
 *.bmp

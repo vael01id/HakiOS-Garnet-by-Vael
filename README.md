@@ -25,9 +25,9 @@ chmod +x boot.sh
 ```
 
 Menu options:
-- `[1] Apple Metal Native` — Full boot (`system.apfs` + Metal/ADSP payload: Adreno 710 Metal, touch, speaker audio, battery reading).
-- `[2] OpenGL ES` — Full boot with Mesa Freedreno fallback payload (older kernel without ADSP audio/battery).
-- `[3]` / `[4]` **Fast Swap** — Uploads only the kernel payload when switching modes while `xnuloader` already has `system.apfs` in RAM.
+- `[1] Apple Metal Native` — Full boot (`system.apfs` + Native Metal 120 Hz + Haptics + Touch + ADSP + Torch payload).
+- `[2] OpenGL ES` — Full boot with Mesa Freedreno / EAGL OpenGL ES 120 Hz payload (same kernel & drivers, `gl=1`).
+- `[3]` / `[4]` **Fast Swap** — Uploads only the kernel payload when switching between Metal and OpenGL ES while `xnuloader` already has `system.apfs` in RAM.
 
 For reliable Adreno 710 GMU init, boot from Android (`adb reboot bootloader`) or a fresh Fastboot session instead of looping soft resets in `xnuloader`.
 
@@ -35,20 +35,25 @@ For reliable Adreno 710 GMU init, boot from Android (`adb reboot bootloader`) or
 
 | Feature | State | Notes |
 |---|---|---|
-| Display & GPU | Works | Adreno 710 (Metal & OpenGL ES); panel refresh is 60 Hz, UI currently ~26–46 fps |
-| Touch & Power key | Works | FocalTech `FT3683G` touchscreen; Power button sleep/wake |
-| Audio & ADSP | Works | Speaker output, Control Center volume slider, and `Vol+`/`Vol-` buttons |
-| Battery & Clock | Partial | Battery % and USB status via ADSP (no fast charging); PMIC RTC ticks from boot `epoch` |
+| Display & GPU | Works | **Real Hardware 120 Hz** (`garnet_120hz=1`, `fb_hz=120`, `fb_intf=0x0ae36000` hardware-beam phase-locked VSync, panel DCS `0x6c 0x02` + `CTL_INTF_FLUSH` DPU 8.x) — **Major upgrade over previous release (ultra-smooth 120 FPS UI)** + **Native Metal (`metal=1`)** on Adreno 710 @ 940 MHz (zero black glitches, Spotlight Search top black bar fixed, level 0 mipmap blur fix, full backdrop transparency, `fbscale=2`, `anim_max=1`, `fb_queue=2`, `fb_threads=7`), safe HS-mode OLED DBV sleep/wake (`DCS 0x51`) |
+| Wi-Fi | In Progress / WIP | Native WCN3990 / Adrastea SNOC (`wifi=1`): TrustZone PAS WPSS firmware boot & CE SPIs integration in progress (not yet functional in iOS Settings). |
+| Haptics | Works | PM8350B HV-Haptics (`haptic=5`, `/dev/hakios-haptic`, SPMI v7 `HAP_CFG` `0x3f0` / `HAP_PAT` `0x3f1` / `PMK8350 HAP_SDAM` `0x09d`, zero OLED conflict) |
+| Flashlight | Works | PM6150L 3-channel SPMI v7 torch (`torch=3`, `/dev/hakios-torch`, 100 mA/LED cap, thermal stage 0 verified) |
+| Touch & Power key | Works | FocalTech `FT3683G` touchscreen (priority 93 kernel thread, 1 ms max idle latency, `touch_poll_us=500` / 2000 Hz active polling, ~2.4 MHz `spin_ns(180)` SPI, hardware-beam phase-locked VSync); Power button sleep/wake |
+| Audio & ADSP | Partial | ADSP (`adsp=1`) + `battmgr` telemetry active; Garnet ADSP is AudioReach/SPF (GPR) rather than legacy APR (`apr_audio_svc`), so speaker/mic APR paths are not active on Garnet |
+| Battery & Clock | Partial | Battery %, voltage, current, temperature, and USB status via ADSP `battmgr` (no fast charging); PMIC RTC ticks from boot `epoch` |
 | Brightness & Vol keys | Works | Control Center brightness slider (`kern.hakios.brightness`); `Vol+`/`Vol-` HUD events |
-| Connectivity & Peripherals | Missing | Wi-Fi, Bluetooth, Cellular, Camera, GPS, Microphone |
+| Other Peripherals | Missing | Wi-Fi (WIP / not yet functional), Bluetooth (`bt_wcn3990` on `HSUART0`, upstream HakiOS has no HCI/IOBluetooth stack yet), Microphone (`WCD937x` on AudioReach/SPF), Cellular (~125 MB modem blobs), Camera, GPS |
+
+Debug / rollback boot-args if needed: `wifi=0` (disable Wi-Fi), `haptic=0` (disable PM8350B haptics), `garnet_120hz=0 fb_hz=60` (revert to 60 Hz scanout), `gpu_gmem_base=0` (disable Adreno 710 GMEM), `garnet_dsi=0` (disable DSI0 brightness/power DCS), `torch=0` (disable PM6150L flashlight).
 
 ## Included Files
 
 | File | Size | Notes | SHA256 |
 |---|---:|---|---|
 | `garnet-boot.img` | `2.51 MiB` (`2,627,584` B) | `xnuloader` + UEFI (`fastboot boot`, auto-detects 8/12 GB RAM) | `b6628f7eaabe2dcd7c71fb0e8af939d290142697628b41d32d55aad740e9d778` |
-| `payloads/run-metal-fixed-payload.bin` | `50.53 MiB` (`52,979,496` B) | XNU kernel + APFS ramdisk + Metal/ADSP cmdline | `4df68e08790ae762b232f627952fb3871c66ddcc4c53f582190b83d15d32d88c` |
-| `payloads/opengles_payload.bin` | `40.99 MiB` (`42,983,128` B) | XNU kernel + OpenGL ES fallback ramdisk | `927bcda239df9c6c587d933c9e7aedefd11add071310b9a80b8f4c900487e66e` |
+| `payloads/run-metal-fixed-payload.bin` | `53.93 MiB` (`56,549,608` B) | XNU kernel + APFS ramdisk + **Real 120 Hz Beam-Locked VSync** (major upgrade over previous release, ultra-smooth 120 FPS UI) + **Native Metal (`metal=1`)** with Spotlight Search top black bar & blur backdrop fixes + PM8350B HV-Haptics (`haptic=5`) + 2000 Hz / 2.4 MHz SPI Touch + ADSP `battmgr` + PM6150L Torch (`torch=3`) | `29d84078099d7afb6750b0e8ae4f8a6951affa6680c1a1f3765e33e2cd7c9bf0` |
+| `payloads/opengles_payload.bin` | `53.93 MiB` (`56,549,528` B) | XNU kernel + APFS ramdisk + OpenGL ES (`gl=1`) + Real 120 Hz + Haptics + Touch + ADSP + Torch (100% Fast Swap compatible) | `f355c98966b3071a3b2aa72f787fd118380e73a00130478d21a9d47b4ab9920d` |
 | `boot.bat` / `boot.sh` | — | Windows & Unix RAM boot scripts (`tools/stage.ps1` transfer monitor) | — |
 | `tools/platform-tools/` | — | Bundled Windows `adb` & `fastboot` (`Apache-2.0`, `NOTICE.txt`) | — |
 
@@ -57,4 +62,3 @@ For reliable Adreno 710 GMU init, boot from Android (`adb reboot bootloader`) or
 - [`oosexgang/hakios-xnu-kernel`](https://github.com/oosexgang/hakios-xnu-kernel), `hakios-xnu-userland`, `hakios-metal` — XNU port, `xnuloader`, Mesa/Metal stack
 - [`Project-Silicium/Mu-Silicium`](https://github.com/Project-Silicium/Mu-Silicium) — Qualcomm UEFI base
 - Licenses: [`LICENSE.APSL`](LICENSE.APSL) (`APSL-2.0`), [`LICENSE`](LICENSE) (`MIT`), [`LEGAL.md`](LEGAL.md)
-"# HakiOS-Garnet-by-Vael" 
